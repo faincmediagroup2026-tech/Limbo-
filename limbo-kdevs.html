@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limbo - KDevs Edition</title>
+    <style>
+        :root {
+            --k-red: #ff0055;
+            --k-orange: #ff5500;
+            --k-yellow: #ffcc00;
+            --k-green: #00ff55;
+            --k-cyan: #00ffff;
+            --k-blue: #0055ff;
+            --k-purple: #aa00ff;
+            --k-magenta: #ff00ff;
+        }
+
+        body {
+            background-color: #030305;
+            color: #fff;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+            user-select: none;
+            transition: background 0.5s ease;
+            padding-bottom: 40px;
+        }
+
+        /* ======== LOADING SCREEN ======== */
+        #loadingScreen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100vh;
+            background-color: #030305;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1), transform 0.6s ease;
+        }
+
+        .load-brand {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ff0055;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            text-shadow: 0 0 8px rgba(255, 0, 85, 0.5);
+            margin-bottom: 5px;
+            animation: pulseGlow 1.5s infinite alternate;
+        }
+
+        .load-title {
+            font-size: 4rem;
+            font-weight: 900;
+            color: #ffcc00;
+            text-shadow: 5px 5px #ff0000, 0 0 20px rgba(255, 204, 0, 0.4);
+            letter-spacing: 8px;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .load-version {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #555;
+            letter-spacing: 2px;
+            margin-top: 10px;
+        }
+
+        @keyframes pulseGlow {
+            from { opacity: 0.6; filter: drop-shadow(0 0 2px #ff0055); }
+            to   { opacity: 1;   filter: drop-shadow(0 0 12px #ff0055); }
+        }
+
+        /* ======== AUTH SCREEN ======== */
+        #authScreen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100vh;
+            background: rgba(3, 3, 5, 0.98);
+            z-index: 9998;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .auth-card {
+            background: #0d0d18;
+            border: 2px solid #ff0055;
+            border-radius: 18px;
+            padding: 32px 26px;
+            width: 320px;
+            max-width: 92vw;
+            box-shadow: 0 0 40px rgba(255, 0, 85, 0.2), 0 0 80px rgba(255, 0, 85, 0.07);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .auth-brand {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #ff0055;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            text-shadow: 0 0 8px rgba(255, 0, 85, 0.6);
+            animation: pulseGlow 1.5s infinite alternate;
+        }
+
+        .auth-game-title {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #ffcc00;
+            text-shadow: 4px 4px #ff0000, 0 0 15px rgba(255, 204, 0, 0.3);
+            letter-spacing: 10px;
+            text-transform: uppercase;
+            margin: -6px 0;
+        }
+
+        .auth-divider {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #ff0055 40%, #ff0055 60%, transparent);
+            margin: 2px 0;
+        }
+
+        .auth-form-inner {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .auth-form-label {
+            font-size: 0.85rem;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .auth-input {
+            width: 100%;
+            background: #080812;
+            border: 2px solid #2a2a3a;
+            color: #fff;
+            padding: 11px 14px;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            box-sizing: border-box;
+            outline: none;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            transition: border-color 0.2s;
+        }
+
+        .auth-input:focus { border-color: #ff0055; box-shadow: 0 0 8px rgba(255,0,85,0.3); }
+
+        .auth-submit-btn {
+            width: 100%;
+            padding: 13px;
+            font-size: 0.95rem;
+            font-weight: 900;
+            background: #ff0055;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 4px 0 #7a0028;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            transition: all 0.1s;
+            margin-top: 2px;
+        }
+
+        .auth-submit-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #7a0028; }
+
+        .auth-error {
+            color: #ff3366;
+            font-size: 0.78rem;
+            font-weight: bold;
+            min-height: 16px;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .auth-switch {
+            color: #555;
+            font-size: 0.78rem;
+            text-align: center;
+            cursor: default;
+            letter-spacing: 0.5px;
+        }
+
+        .auth-switch span {
+            color: #ffcc00;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        /* ======== USER INFO BAR ======== */
+        .user-info-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            height: 24px;
+        }
+
+        .username-badge {
+            font-size: 0.72rem;
+            font-weight: bold;
+            color: #888;
+            letter-spacing: 1px;
+        }
+
+        .username-badge.is-admin {
+            color: #ffcc00;
+            text-shadow: 0 0 8px rgba(255, 204, 0, 0.5);
+        }
+
+        .logout-btn {
+            font-size: 0.62rem;
+            padding: 3px 10px;
+            background: transparent;
+            color: #ff0055;
+            border: 1px solid #ff0055;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            transition: background 0.15s;
+        }
+
+        .logout-btn:hover { background: rgba(255, 0, 85, 0.12); }
+
+        /* ======== GAME TOP BAR ======== */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 90%;
+            max-width: 450px;
+            margin-bottom: 5px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            color: #ffcc00;
+            text-shadow: 3px 3px #ff0000;
+            letter-spacing: 4px;
+            font-weight: 900;
+        }
+
+        .star-counter {
+            font-size: 1.1rem;
+            font-weight: 900;
+            background: #111;
+            padding: 8px 14px;
+            border-radius: 20px;
+            border: 2px solid #ffcc00;
+            color: #ffcc00;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* ======== GAME UI ======== */
+        .status-text {
+            font-size: 1.1rem;
+            margin: 0 0 10px 0;
+            color: #ffcc00;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-align: center;
+            min-height: 24px;
+        }
+
+        .audio-box {
+            background: #111;
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 2px dashed #ffcc00;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .audio-box label {
+            font-size: 0.85rem;
+            color: #ffcc00;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #fileInput { display: none; }
+
+        .diff-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+            width: 360px;
+        }
+
+        .diff-btn {
+            padding: 10px 2px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #fff;
+            border: 3px solid #000;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 3px 0 #000;
+            transition: all 0.1s ease;
+        }
+
+        .diff-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #000; }
+
+        .diff-btn.easy   { background-color: #0055ff; }
+        .diff-btn.normal { background-color: #00ff55; color: #000; }
+        .diff-btn.hard   { background-color: #ffcc00; color: #000; }
+        .diff-btn.harder { background-color: #ff5500; }
+        .diff-btn.insane { background-color: #ff00ff; }
+        .diff-btn.demon  { background-color: #ff0000; }
+
+        .diff-btn.active-diff {
+            border-color: #ffffff !important;
+            box-shadow: 0 0 12px currentColor, 0 3px 0 #000;
+            transform: scale(1.05);
+        }
+
+        .key-container {
+            width: 360px;
+            height: 170px;
+            position: relative;
+            margin: 5px 0;
+        }
+
+        .key {
+            width: 70px;
+            height: 70px;
+            background-color: #ff0000;
+            border: 4px solid #000;
+            border-top: 9px solid #ffcc00;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            box-shadow: 0 5px 0 #000;
+            position: absolute;
+            transition: none;
+            box-sizing: border-box;
+        }
+
+        .key.target-focus { animation: target-glow 0.4s infinite alternate; }
+
+        @keyframes target-glow {
+            from { box-shadow: 0 5px 0 #000, 0 0 12px #ffcc00; filter: brightness(1.2); }
+            to   { box-shadow: 0 5px 0 #000, 0 0 25px #ffcc00; filter: brightness(1.5); }
+        }
+
+        .key.disabled { pointer-events: none; }
+
+        .key.c-0 { background-color: var(--k-red);     border-top-color: #ff88aa; box-shadow: 0 5px 0 #000, 0 0 15px var(--k-red); }
+        .key.c-1 { background-color: var(--k-orange);  border-top-color: #ffbb88; box-shadow: 0 5px 0 #000, 0 0 15px var(--k-orange); }
+        .key.c-2 { background-color: var(--k-yellow);  border-top-color: #fffa88; box-shadow: 0 5px 0 #000, 0 0 15px var(--k-yellow); }
+        .key.c-3 { background-color: var(--k-green);   border-top-color: #88ffaa; box-shadow: 0 5px 0 #000, 0 0 15px var(--k-green); }
+        .key.c-4 { background-color: var(--k-cyan);    border-top-color: #88ffff; box-shadow: 0 5px 0 #000, 0 0 15px var(--k-cyan); }
+        .key.c-5 { background-color: var(--k-blue);    border-top-color: #88aaff; box-shadow: 0 5px 0 #000, 0 0 15px var(--k-blue); }
+        .key.c-6 { background-color: var(--k-purple);  border-top-color: #dd88ff; box-shadow: 0 5px 0 #000, 0 0 15px var(--k-purple); }
+        .key.c-7 { background-color: var(--k-magenta); border-top-color: #ff88ff; box-shadow: 0 5px 0 #000, 0 0 15px var(--k-magenta); }
+
+        .btn {
+            margin-top: 15px;
+            padding: 12px 35px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #222;
+            color: #fff;
+            border: 3px solid #ffcc00;
+            border-radius: 8px;
+            box-shadow: 0 4px 0 #ffcc00;
+            text-transform: uppercase;
+        }
+
+        .btn:disabled {
+            background-color: #111;
+            color: #555;
+            border-color: #333;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin-top: 10px;
+            font-size: 2.3rem;
+            font-weight: 900;
+            min-height: 60px;
+            text-transform: uppercase;
+            text-shadow: 3px 3px #000;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        .win  { color: #00ff00; }
+        .lose { color: #ff0000; }
+
+        /* ======== PANELS ======== */
+        .panel-container {
+            margin-top: 25px;
+            width: 90%;
+            max-width: 400px;
+            background: rgba(15, 15, 25, 0.9);
+            border: 2px solid #333;
+            border-radius: 12px;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            color: #ffcc00;
+            text-align: center;
+            margin: 0 0 10px 0;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        /* ======== STORE ======== */
+        .store-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .store-item {
+            background: #222;
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+        }
+
+        .store-item-name {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #fff;
+            text-align: center;
+        }
+
+        .store-item-btn {
+            width: 100%;
+            padding: 6px 0;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .store-item-btn.buy          { background-color: #ffcc00; color: #000; }
+        .store-item-btn.use          { background-color: #00ff55; color: #000; }
+        .store-item-btn.active-theme { background-color: #00ffff; color: #000; pointer-events: none; }
+
+        .custom-audio-form {
+            grid-column: span 2;
+            width: 100%;
+            margin-top: 5px;
+            background: #111;
+            border: 1px solid #ff3366;
+            border-radius: 6px;
+            padding: 8px;
+            box-sizing: border-box;
+            display: none;
+        }
+
+        .custom-audio-form input {
+            width: 100%;
+            background: #000;
+            border: 1px solid #444;
+            color: #ffcc00;
+            padding: 6px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 6px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .custom-audio-form button {
+            background: #ff3366;
+            color: #fff;
+            border: none;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        /* ======== ACHIEVEMENTS ======== */
+        .achieve-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .achieve-row {
+            background: #1a1a24;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .achieve-details { display: flex; flex-direction: column; gap: 2px; }
+        .achieve-name    { font-size: 0.85rem; font-weight: bold; color: #fff; }
+        .achieve-reward  { font-size: 0.75rem; color: #ffcc00; font-weight: bold; }
+        .achieve-progress { font-size: 0.7rem; color: #aaa; }
+
+        .achieve-claim-btn {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .achieve-claim-btn.locked  { background-color: #333; color: #666; cursor: not-allowed; }
+        .achieve-claim-btn.ready   { background-color: #00ff55; color: #000; animation: bounceGlow 0.8s infinite alternate; }
+        .achieve-claim-btn.claimed { background-color: #555; color: #888; cursor: not-allowed; }
+
+        @keyframes bounceGlow {
+            from { box-shadow: 0 0 4px #00ff55; }
+            to   { box-shadow: 0 0 12px #00ff55; }
+        }
+
+        /* ======== ADMIN PANEL ======== */
+        #adminBlock {
+            border-color: #ffcc00 !important;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.1);
+        }
+
+        .admin-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .admin-count-label {
+            font-size: 0.72rem;
+            color: #888;
+            letter-spacing: 1px;
+        }
+
+        .admin-refresh-btn {
+            padding: 5px 12px;
+            font-size: 0.72rem;
+            font-weight: bold;
+            background: #1a1500;
+            color: #ffcc00;
+            border: 1px solid #ffcc00;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .admin-user-row {
+            background: #14141e;
+            border: 1px solid #2a2a3a;
+            border-radius: 6px;
+            padding: 9px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .admin-user-row.is-admin {
+            border-color: #ffcc00;
+            background: #1a1700;
+        }
+
+        .admin-user-info { display: flex; flex-direction: column; gap: 2px; }
+
+        .admin-user-name {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .admin-user-name.crown { color: #ffcc00; }
+
+        .admin-user-meta {
+            font-size: 0.65rem;
+            color: #666;
+            letter-spacing: 0.5px;
+        }
+
+        .admin-user-stars {
+            font-size: 0.8rem;
+            color: #ffcc00;
+            font-weight: 900;
+            text-align: right;
+        }
+
+        .admin-user-themes-badge {
+            font-size: 0.62rem;
+            color: #888;
+            text-align: right;
+        }
+
+        /* ======== BACKGROUND THEMES ======== */
+        body.theme-default    { background-color: #030305; }
+        body.theme-tech       { background: radial-gradient(circle, #0c1020 0%, #030408 100%); }
+        body.theme-magma      { background: linear-gradient(180deg, #1f0505 0%, #050000 100%); }
+        body.theme-void       { background: #000000; }
+        body.theme-matrix     { background: linear-gradient(135deg, #021a02 0%, #000500 100%); }
+        body.theme-limbo      { background: radial-gradient(circle, #2a0044 0%, #05000a 100%); }
+        body.theme-god        { background: radial-gradient(circle, #3a2f00 0%, #070600 100%); }
+        body.theme-skullcustom { background: linear-gradient(135deg, #150000 0%, #050008 100%); border: 3px solid #ff0055; box-sizing: border-box; }
+
+        /* ======== HIDDEN TIK TOK LINK ======== */
+        .secret-tiktok-btn {
+            margin-top: 40px;
+            background: transparent;
+            color: #555;
+            font-size: 0.85rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            opacity: 0.3;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        .secret-tiktok-btn:hover { opacity: 0.7; }
+    </style>
+</head>
+<body class="theme-default">
+
+    <!-- ===== LOADING SCREEN ===== -->
+    <div id="loadingScreen">
+        <div class="load-brand">KDevs</div>
+        <div class="load-title">Limbo</div>
+        <div class="load-version">v1</div>
+    </div>
+
+    <!-- ===== AUTH SCREEN ===== -->
+    <div id="authScreen">
+        <div class="auth-card">
+            <div class="auth-brand">KDevs</div>
+            <div class="auth-game-title">LIMBO</div>
+            <div class="auth-divider"></div>
+
+            <!-- Login Form -->
+            <div id="loginForm" class="auth-form-inner">
+                <div class="auth-form-label">Login</div>
+                <input class="auth-input" type="text" id="loginUser" placeholder="Username" autocomplete="username">
+                <input class="auth-input" type="password" id="loginPass" placeholder="Password" autocomplete="current-password">
+                <div class="auth-error" id="loginError"></div>
+                <button class="auth-submit-btn" onclick="attemptLogin()">Log In</button>
+                <div class="auth-switch">No account? <span onclick="showSignup()">Sign Up</span></div>
+            </div>
+
+            <!-- Signup Form -->
+            <div id="signupForm" class="auth-form-inner" style="display:none;">
+                <div class="auth-form-label">Sign Up</div>
+                <input class="auth-input" type="text" id="signupUser" placeholder="Username (3+ chars)" autocomplete="username">
+                <input class="auth-input" type="password" id="signupPass" placeholder="Password (6+ chars)" autocomplete="new-password">
+                <input class="auth-input" type="password" id="signupConfirm" placeholder="Confirm Password" autocomplete="new-password">
+                <div class="auth-error" id="signupError"></div>
+                <button class="auth-submit-btn" onclick="attemptSignup()">Create Account</button>
+                <div class="auth-switch">Have an account? <span onclick="showLogin()">Log In</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MENU MUSIC ===== -->
+    <audio id="menuMusic" src="http://googleusercontent.com/file_content/19" loop></audio>
+
+    <!-- ===== USER INFO BAR ===== -->
+    <div class="user-info-bar">
+        <span class="username-badge" id="loggedInUser"></span>
+        <button class="logout-btn" onclick="logout()">Log Out</button>
+    </div>
+
+    <!-- ===== GAME TOP BAR ===== -->
+    <div class="top-bar">
+        <h1>LIMBO</h1>
+        <div class="star-counter" id="starDisplay">⭐ 0</div>
+    </div>
+
+    <div class="status-text" id="statusText">First, pick your local MP3 file!</div>
+
+    <div class="audio-box" onclick="document.getElementById('fileInput').click()">
+        <label id="audioLabel">📁 SELECT ISOLATION_END_PART.MP3</label>
+        <input type="file" id="fileInput" accept="audio/mpeg, audio/mp3" onchange="loadLocalAudioFile(this)">
+    </div>
+
+    <div class="diff-container" id="diffMenu">
+        <button class="diff-btn easy active-diff" onclick="setDifficulty('easy', 1300, 1)">Easy (1⭐)</button>
+        <button class="diff-btn normal" onclick="setDifficulty('normal', 1100, 2)">Normal (2⭐)</button>
+        <button class="diff-btn hard" onclick="setDifficulty('hard', 800, 3)">Hard (3⭐)</button>
+        <button class="diff-btn harder" onclick="setDifficulty('harder', 600, 4)">Harder (4⭐)</button>
+        <button class="diff-btn insane" onclick="setDifficulty('insane', 500, 10)">Insane (10⭐)</button>
+        <button class="diff-btn demon" onclick="setDifficulty('demon', 300, 100)">Demon (100⭐)</button>
+    </div>
+
+    <audio id="bgMusic"></audio>
+    <div class="key-container" id="grid"></div>
+    <div id="result"></div>
+    <button class="btn" id="actionBtn" onclick="startFlowSequence()" disabled>Play Sequence</button>
+
+    <!-- ===== STORE PANEL ===== -->
+    <div class="panel-container" id="storeBlock">
+        <div class="panel-title">🌌 Background Theme Store</div>
+        <div class="store-grid" id="storeGrid"></div>
+        <div class="custom-audio-form" id="customAudioForm">
+            <div style="font-size:0.75rem; color:#ff3366; font-weight:bold; margin-bottom:4px;">💀 CUSTOM LOOP TRACK URL:</div>
+            <input type="text" id="customUrlInput" placeholder="Paste custom theme .mp3 link here...">
+            <button onclick="applyCustomAudioLoopLink()">Set &amp; Play Loop</button>
+        </div>
+    </div>
+
+    <!-- ===== ACHIEVEMENTS PANEL ===== -->
+    <div class="panel-container" id="achieveBlock">
+        <div class="panel-title">🏆 Star Awards &amp; Achievements</div>
+        <div class="achieve-list" id="achieveList"></div>
+    </div>
+
+    <!-- ===== ADMIN PANEL (KDevs only) ===== -->
+    <div class="panel-container" id="adminBlock" style="display:none;">
+        <div class="panel-title">👑 Admin — User List</div>
+        <div class="admin-header-row">
+            <span class="admin-count-label" id="adminUserCount">Loading...</span>
+            <button class="admin-refresh-btn" onclick="renderAdminPanel()">🔄 Refresh</button>
+        </div>
+        <div class="achieve-list" id="adminUserList"></div>
+    </div>
+
+    <a href="https://tiktok.com/@kiannodalo" target="_blank" class="secret-tiktok-btn">pssttt</a>
+
+    <script>
+        /* ============================================================
+           AUTH STATE
+        ============================================================ */
+        let currentUser = null;
+
+        const ADMIN_USERNAME = 'KDevs';
+        const ADMIN_PASSWORD = 'ILoveKDevs123';
+
+        /* ============================================================
+           GAME STATE
+        ============================================================ */
+        const totalKeys = 8;
+        let keysData = [];
+        let winningKeyId = 0;
+        let shuffleInterval = null;
+        let timelineTimeouts = [];
+
+        let currentDifficultyKey = 'easy';
+        let currentShuffleSpeed  = 1300;
+        let currentStarReward    = 1;
+
+        let playerStars       = 0;
+        let unlockedThemes    = ['theme-default'];
+        let activeTheme       = 'theme-default';
+        let customLoopAudioUrl = '';
+        let winCounters       = { easy: 0, normal: 0, hard: 0, harder: 0, insane: 0, demon: 0 };
+        let claimedAwards     = [];
+
+        const shopThemes = [
+            { id: 'theme-default',    name: 'Default Dark',          price: 0 },
+            { id: 'theme-tech',       name: 'Cyber Blue Tech',        price: 10 },
+            { id: 'theme-magma',      name: 'Crimson Magma',          price: 50 },
+            { id: 'theme-matrix',     name: 'Matrix Green',           price: 500 },
+            { id: 'theme-skullcustom',name: '💀 Custom Loop Track',   price: 5000 },
+            { id: 'theme-void',       name: 'Absolute Void',          price: 25000 },
+            { id: 'theme-limbo',      name: 'Limbo Climax Purple',    price: 250000 },
+            { id: 'theme-god',        name: 'Golden God Premium',     price: 5000000 }
+        ];
+
+        const achievementGoals = [
+            { id: 'award_easy',   diff: 'easy',   target: 50, reward: 10000,    name: '1. Complete 50 Easy' },
+            { id: 'award_normal', diff: 'normal', target: 30, reward: 15000,    name: '2. Complete 30 Normal' },
+            { id: 'award_hard',   diff: 'hard',   target: 25, reward: 25000,    name: '3. Complete 25 Hard' },
+            { id: 'award_harder', diff: 'harder', target: 10, reward: 50000,    name: '4. Complete 10 Harder' },
+            { id: 'award_insane', diff: 'insane', target: 5,  reward: 100000,   name: '5. Complete 5 Insane' },
+            { id: 'award_demon',  diff: 'demon',  target: 3,  reward: 'infinite', name: '6. Complete 3 Demon' }
+        ];
+
+        const slotPositions = [
+            { left: 0,   top: 0  }, { left: 95,  top: 0  }, { left: 190, top: 0  }, { left: 285, top: 0  },
+            { left: 0,   top: 95 }, { left: 95,  top: 95 }, { left: 190, top: 95 }, { left: 285, top: 95 }
+        ];
+
+        /* ============================================================
+           DOM REFERENCES
+        ============================================================ */
+        const statusText    = document.getElementById('statusText');
+        const resultDisplay = document.getElementById('result');
+        const actionBtn     = document.getElementById('actionBtn');
+        const audio         = document.getElementById('bgMusic');
+        const menuMusic     = document.getElementById('menuMusic');
+        const audioLabel    = document.getElementById('audioLabel');
+        const grid          = document.getElementById('grid');
+        const diffMenu      = document.getElementById('diffMenu');
+        const starDisplay   = document.getElementById('starDisplay');
+        const storeBlock    = document.getElementById('storeBlock');
+        const achieveBlock  = document.getElementById('achieveBlock');
+        const customAudioForm  = document.getElementById('customAudioForm');
+        const customUrlInput   = document.getElementById('customUrlInput');
+
+        /* ============================================================
+           AUTH HELPERS
+        ============================================================ */
+        function getAllUsers() {
+            try {
+                const raw = localStorage.getItem('limbo_users');
+                return raw ? JSON.parse(raw) : {};
+            } catch (e) { return {}; }
+        }
+
+        function saveAllUsers(usersObj) {
+            localStorage.setItem('limbo_users', JSON.stringify(usersObj));
+        }
+
+        function isAdmin(username) {
+            return username === ADMIN_USERNAME;
+        }
+
+        function createAdminData() {
+            return {
+                password:       ADMIN_PASSWORD,
+                stars:          1e15,
+                unlockedThemes: shopThemes.map(t => t.id),
+                activeTheme:    'theme-default',
+                customUrl:      '',
+                winCounters:    { easy: 0, normal: 0, hard: 0, harder: 0, insane: 0, demon: 0 },
+                claimedAwards:  []
+            };
+        }
+
+        function createDefaultUserData(password) {
+            return {
+                password:       password,
+                stars:          0,
+                unlockedThemes: ['theme-default'],
+                activeTheme:    'theme-default',
+                customUrl:      '',
+                winCounters:    { easy: 0, normal: 0, hard: 0, harder: 0, insane: 0, demon: 0 },
+                claimedAwards:  []
+            };
+        }
+
+        /* ============================================================
+           AUTH FLOW
+        ============================================================ */
+        function checkAuthAndStart() {
+            const savedUser = localStorage.getItem('limbo_current_user');
+            if (savedUser) {
+                if (isAdmin(savedUser)) {
+                    // Ensure admin always exists
+                    const users = getAllUsers();
+                    if (!users[ADMIN_USERNAME]) {
+                        users[ADMIN_USERNAME] = createAdminData();
+                        saveAllUsers(users);
+                    }
+                    currentUser = savedUser;
+                    loadUserData(savedUser);
+                    startGameUI();
+                    return;
+                }
+                const users = getAllUsers();
+                if (users[savedUser]) {
+                    currentUser = savedUser;
+                    loadUserData(savedUser);
+                    startGameUI();
+                    return;
+                }
+            }
+            // No valid session → show auth
+            document.getElementById('authScreen').style.display = 'flex';
+        }
+
+        function attemptLogin() {
+            const username = document.getElementById('loginUser').value.trim();
+            const password = document.getElementById('loginPass').value;
+            const errEl    = document.getElementById('loginError');
+            errEl.textContent = '';
+
+            if (!username || !password) {
+                errEl.textContent = 'Fill in all fields!';
+                return;
+            }
+
+            // Admin check
+            if (username === ADMIN_USERNAME) {
+                if (password !== ADMIN_PASSWORD) {
+                    errEl.textContent = 'Wrong password!';
+                    return;
+                }
+                const users = getAllUsers();
+                if (!users[ADMIN_USERNAME]) {
+                    users[ADMIN_USERNAME] = createAdminData();
+                    saveAllUsers(users);
+                }
+                currentUser = ADMIN_USERNAME;
+                localStorage.setItem('limbo_current_user', ADMIN_USERNAME);
+                loadUserData(ADMIN_USERNAME);
+                hideAuthScreen();
+                startGameUI();
+                return;
+            }
+
+            const users = getAllUsers();
+            if (!users[username]) {
+                errEl.textContent = 'User not found!';
+                return;
+            }
+            if (users[username].password !== password) {
+                errEl.textContent = 'Wrong password!';
+                return;
+            }
+
+            currentUser = username;
+            localStorage.setItem('limbo_current_user', username);
+            loadUserData(username);
+            hideAuthScreen();
+            startGameUI();
+        }
+
+        function attemptSignup() {
+            const username  = document.getElementById('signupUser').value.trim();
+            const password  = document.getElementById('signupPass').value;
+            const confirm   = document.getElementById('signupConfirm').value;
+            const errEl     = document.getElementById('signupError');
+            errEl.textContent = '';
+
+            if (!username || !password || !confirm) { errEl.textContent = 'Fill in all fields!'; return; }
+            if (username === ADMIN_USERNAME)         { errEl.textContent = 'Username taken!'; return; }
+            if (username.length < 3)                 { errEl.textContent = 'Username must be 3+ characters!'; return; }
+            if (password.length < 6)                 { errEl.textContent = 'Password must be 6+ characters!'; return; }
+            if (password !== confirm)                { errEl.textContent = 'Passwords do not match!'; return; }
+
+            const users = getAllUsers();
+            if (users[username]) { errEl.textContent = 'Username already taken!'; return; }
+
+            users[username] = createDefaultUserData(password);
+            saveAllUsers(users);
+
+            currentUser = username;
+            localStorage.setItem('limbo_current_user', username);
+            loadUserData(username);
+            hideAuthScreen();
+            startGameUI();
+        }
+
+        function logout() {
+            // Save before logout
+            saveGameToDevice();
+
+            localStorage.removeItem('limbo_current_user');
+            currentUser = null;
+
+            // Reset game state
+            playerStars        = 0;
+            unlockedThemes     = ['theme-default'];
+            activeTheme        = 'theme-default';
+            customLoopAudioUrl = '';
+            winCounters        = { easy: 0, normal: 0, hard: 0, harder: 0, insane: 0, demon: 0 };
+            claimedAwards      = [];
+
+            // Reset audio UI
+            menuMusic.pause();
+            audio.pause();
+            audio.src = '';
+            audioLabel.textContent   = "📁 SELECT ISOLATION_END_PART.MP3";
+            audioLabel.style.color   = "#ffcc00";
+            actionBtn.disabled       = true;
+            resultDisplay.textContent = '';
+            resultDisplay.className  = '';
+            statusText.textContent   = "First, pick your local MP3 file!";
+
+            // Hide admin panel
+            document.getElementById('adminBlock').style.display = 'none';
+
+            // Reset theme
+            document.body.className = 'theme-default';
+
+            // Reset user info bar
+            document.getElementById('loggedInUser').textContent = '';
+            document.getElementById('loggedInUser').className   = 'username-badge';
+
+            // Show login form fresh
+            document.getElementById('loginUser').value   = '';
+            document.getElementById('loginPass').value   = '';
+            document.getElementById('loginError').textContent = '';
+            document.getElementById('signupError').textContent = '';
+            showLogin();
+            document.getElementById('authScreen').style.display = 'flex';
+        }
+
+        function showSignup() {
+            document.getElementById('loginForm').style.display  = 'none';
+            document.getElementById('signupForm').style.display = 'flex';
+            document.getElementById('loginError').textContent   = '';
+            document.getElementById('signupError').textContent  = '';
+        }
+
+        function showLogin() {
+            document.getElementById('signupForm').style.display = 'none';
+            document.getElementById('loginForm').style.display  = 'flex';
+            document.getElementById('loginError').textContent   = '';
+            document.getElementById('signupError').textContent  = '';
+        }
+
+        function hideAuthScreen() {
+            document.getElementById('authScreen').style.display = 'none';
+        }
+
+        /* ============================================================
+           USER DATA LOAD / SAVE
+        ============================================================ */
+        function loadUserData(username) {
+            const users    = getAllUsers();
+            const userData = users[username];
+            if (!userData) return;
+
+            if (isAdmin(username)) {
+                // Admin always gets infinite stars and all themes
+                playerStars        = 1e15;
+                unlockedThemes     = shopThemes.map(t => t.id);
+                activeTheme        = userData.activeTheme || 'theme-default';
+                customLoopAudioUrl = userData.customUrl || '';
+                winCounters        = userData.winCounters || { easy: 0, normal: 0, hard: 0, harder: 0, insane: 0, demon: 0 };
+                claimedAwards      = userData.claimedAwards || [];
+            } else {
+                playerStars        = userData.stars || 0;
+                unlockedThemes     = userData.unlockedThemes || ['theme-default'];
+                activeTheme        = userData.activeTheme || 'theme-default';
+                customLoopAudioUrl = userData.customUrl || '';
+                winCounters        = userData.winCounters || { easy: 0, normal: 0, hard: 0, harder: 0, insane: 0, demon: 0 };
+                claimedAwards      = userData.claimedAwards || [];
+            }
+
+            if (customUrlInput) customUrlInput.value = customLoopAudioUrl;
+        }
+
+        function saveGameToDevice() {
+            if (!currentUser) return;
+
+            const users = getAllUsers();
+            if (!users[currentUser]) users[currentUser] = {};
+
+            if (isAdmin(currentUser)) {
+                // Admin: never overwrite stars/themes, just save prefs
+                users[currentUser].activeTheme   = activeTheme;
+                users[currentUser].customUrl     = customLoopAudioUrl;
+                users[currentUser].winCounters   = winCounters;
+                users[currentUser].claimedAwards = claimedAwards;
+            } else {
+                users[currentUser].stars          = playerStars;
+                users[currentUser].unlockedThemes = unlockedThemes;
+                users[currentUser].activeTheme    = activeTheme;
+                users[currentUser].customUrl      = customLoopAudioUrl;
+                users[currentUser].winCounters    = winCounters;
+                users[currentUser].claimedAwards  = claimedAwards;
+            }
+
+            saveAllUsers(users);
+        }
+
+        /* ============================================================
+           GAME UI STARTUP
+        ============================================================ */
+        function startGameUI() {
+            const badge = document.getElementById('loggedInUser');
+            if (isAdmin(currentUser)) {
+                badge.textContent = `👑 ${currentUser}`;
+                badge.className   = 'username-badge is-admin';
+                document.getElementById('adminBlock').style.display = 'block';
+                renderAdminPanel();
+            } else {
+                badge.textContent = `👤 ${currentUser}`;
+                badge.className   = 'username-badge';
+                document.getElementById('adminBlock').style.display = 'none';
+            }
+
+            updateUIState();
+            setupGame();
+            playCorrectMenuTheme();
+        }
+
+        /* ============================================================
+           ADMIN PANEL
+        ============================================================ */
+        function renderAdminPanel() {
+            const users    = getAllUsers();
+            const list     = document.getElementById('adminUserList');
+            const countEl  = document.getElementById('adminUserCount');
+            list.innerHTML = '';
+
+            const entries = Object.entries(users);
+            countEl.textContent = `${entries.length} account${entries.length !== 1 ? 's' : ''} registered`;
+
+            if (entries.length === 0) {
+                list.innerHTML = '<div style="font-size:0.75rem; color:#555; text-align:center; padding:10px;">No users yet</div>';
+                return;
+            }
+
+            // Sort: admin first, then alphabetical
+            entries.sort(([a], [b]) => {
+                if (a === ADMIN_USERNAME) return -1;
+                if (b === ADMIN_USERNAME) return 1;
+                return a.localeCompare(b);
+            });
+
+            entries.forEach(([username, data]) => {
+                const row = document.createElement('div');
+                const admin = isAdmin(username);
+                row.className = `admin-user-row${admin ? ' is-admin' : ''}`;
+
+                const stars       = admin ? '∞' : (data.stars || 0).toLocaleString();
+                const themesCount = admin ? shopThemes.length : (data.unlockedThemes || ['theme-default']).length;
+
+                row.innerHTML = `
+                    <div class="admin-user-info">
+                        <div class="admin-user-name${admin ? ' crown' : ''}">${admin ? '👑 ' : ''}${username}</div>
+                        <div class="admin-user-meta">${admin ? 'Administrator' : 'Player'}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div class="admin-user-stars">⭐ ${stars}</div>
+                        <div class="admin-user-themes-badge">🎨 ${themesCount}/${shopThemes.length} themes</div>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        /* ============================================================
+           UI STATE
+        ============================================================ */
+        function updateUIState() {
+            if (playerStars >= 1e12) {
+                starDisplay.textContent = `⭐ Infinite`;
+            } else {
+                starDisplay.textContent = `⭐ ${playerStars.toLocaleString()}`;
+            }
+
+            document.body.className = activeTheme;
+
+            customAudioForm.style.display = (activeTheme === 'theme-skullcustom') ? 'block' : 'none';
+
+            renderStoreInventory();
+            renderAchievementsPanel();
+        }
+
+        /* ============================================================
+           STORE
+        ============================================================ */
+        function renderStoreInventory() {
+            const gridEl = document.getElementById('storeGrid');
+            gridEl.innerHTML = '';
+
+            shopThemes.forEach(theme => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'store-item';
+
+                let actionButtonHTML = '';
+                if (activeTheme === theme.id) {
+                    actionButtonHTML = `<button class="store-item-btn active-theme">Active</button>`;
+                } else if (unlockedThemes.includes(theme.id)) {
+                    actionButtonHTML = `<button class="store-item-btn use" onclick="equipTheme('${theme.id}')">Equip</button>`;
+                } else {
+                    actionButtonHTML = `<button class="store-item-btn buy" onclick="buyTheme('${theme.id}', ${theme.price})">🛒 Buy</button>`;
+                }
+
+                itemDiv.innerHTML = `
+                    <div class="store-item-name">${theme.name}</div>
+                    <div style="font-size:0.75rem; color:#ffcc00; font-weight:bold;">${theme.price === 0 ? 'FREE' : '⭐ ' + theme.price.toLocaleString()}</div>
+                    ${actionButtonHTML}
+                `;
+                gridEl.appendChild(itemDiv);
+            });
+
+            // Re-attach custom audio form inside store grid
+            const caf = document.getElementById('customAudioForm');
+            gridEl.appendChild(caf);
+        }
+
+        function renderAchievementsPanel() {
+            const listEl = document.getElementById('achieveList');
+            listEl.innerHTML = '';
+
+            achievementGoals.forEach(goal => {
+                const row        = document.createElement('div');
+                row.className    = 'achieve-row';
+                const current    = winCounters[goal.diff] || 0;
+                const isClaimed  = claimedAwards.includes(goal.id);
+                const isReady    = current >= goal.target && !isClaimed;
+                const rewardText = typeof goal.reward === 'number' ? `+⭐ ${goal.reward.toLocaleString()}` : `+⭐ Infinite`;
+
+                let btnHTML = '';
+                if (isClaimed) {
+                    btnHTML = `<button class="achieve-claim-btn claimed" disabled>Claimed</button>`;
+                } else if (isReady) {
+                    btnHTML = `<button class="achieve-claim-btn ready" onclick="claimAchievementAward('${goal.id}')">Claim</button>`;
+                } else {
+                    btnHTML = `<button class="achieve-claim-btn locked" disabled>Locked</button>`;
+                }
+
+                row.innerHTML = `
+                    <div class="achieve-details">
+                        <div class="achieve-name">${goal.name}</div>
+                        <div class="achieve-reward">${rewardText}</div>
+                        <div class="achieve-progress">Progress: ${current}/${goal.target}</div>
+                    </div>
+                    ${btnHTML}
+                `;
+                listEl.appendChild(row);
+            });
+        }
+
+        function claimAchievementAward(goalId) {
+            const goal = achievementGoals.find(g => g.id === goalId);
+            if (!goal) return;
+            const current = winCounters[goal.diff] || 0;
+            if (current >= goal.target && !claimedAwards.includes(goalId)) {
+                if (goal.reward === 'infinite') {
+                    playerStars = 1e15;
+                } else {
+                    playerStars += goal.reward;
+                }
+                claimedAwards.push(goalId);
+                saveGameToDevice();
+                updateUIState();
+            }
+        }
+
+        function buyTheme(themeId, price) {
+            if (playerStars >= price) {
+                playerStars -= price;
+                unlockedThemes.push(themeId);
+                activeTheme = themeId;
+                saveGameToDevice();
+                updateUIState();
+                playCorrectMenuTheme();
+            } else {
+                alert("Not enough Stars! Win shuffles to earn more.");
+            }
+        }
+
+        function equipTheme(themeId) {
+            if (unlockedThemes.includes(themeId)) {
+                activeTheme = themeId;
+                saveGameToDevice();
+                updateUIState();
+                playCorrectMenuTheme();
+            }
+        }
+
+        function applyCustomAudioLoopLink() {
+            const urlInput = customUrlInput.value.trim();
+            if (urlInput !== '') {
+                customLoopAudioUrl = urlInput;
+                saveGameToDevice();
+                playCorrectMenuTheme();
+            } else {
+                alert("Please enter a valid link address!");
+            }
+        }
+
+        function playCorrectMenuTheme() {
+            menuMusic.pause();
+            if (activeTheme === 'theme-skullcustom' && customLoopAudioUrl !== '') {
+                menuMusic.src = customLoopAudioUrl;
+            } else {
+                menuMusic.src = "http://googleusercontent.com/file_content/19";
+            }
+            menuMusic.currentTime = 0;
+            menuMusic.play().catch(() => {
+                document.addEventListener('click', () => { menuMusic.play(); }, { once: true });
+            });
+        }
+
+        /* ============================================================
+           AUDIO FILE LOADER
+        ============================================================ */
+        function loadLocalAudioFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            audioLabel.textContent = "⌛ LOADING AUDIO SAFELY...";
+            audioLabel.style.color = "#ffea00";
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const blob = new Blob([new Uint8Array(e.target.result)], { type: file.type });
+                    audio.src  = URL.createObjectURL(blob);
+                    audio.loop = false;
+
+                    audioLabel.textContent = `🎵 READY: ${file.name.substring(0, 18)}`;
+                    audioLabel.style.color = "#00ff55";
+                    actionBtn.disabled     = false;
+                    statusText.textContent = "Choose difficulty level and tap Play Sequence!";
+                } catch (err) {
+                    audioLabel.textContent = "❌ LOAD ERROR, TRY AGAIN";
+                    audioLabel.style.color = "#ff0033";
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        /* ============================================================
+           DIFFICULTY
+        ============================================================ */
+        function setDifficulty(className, speedMs, starReward) {
+            currentDifficultyKey  = className;
+            currentShuffleSpeed   = speedMs;
+            currentStarReward     = starReward;
+
+            document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active-diff'));
+            const target = document.querySelector(`.diff-btn.${className}`);
+            if (target) target.classList.add('active-diff');
+        }
+
+        /* ============================================================
+           GAME LOGIC
+        ============================================================ */
+        function enableKeyTransitions() {
+            const sec = (currentShuffleSpeed * 0.75) / 1000;
+            document.querySelectorAll('.key').forEach(k => {
+                k.style.transition = `left ${sec}s cubic-bezier(0.25, 1, 0.5, 1), top ${sec}s cubic-bezier(0.25, 1, 0.5, 1)`;
+            });
+        }
+
+        function disableKeyTransitions() {
+            document.querySelectorAll('.key').forEach(k => { k.style.transition = 'none'; });
+        }
+
+        function setupGame() {
+            clearInterval(shuffleInterval);
+            timelineTimeouts.forEach(clearTimeout);
+            timelineTimeouts = [];
+
+            grid.innerHTML  = '';
+            winningKeyId    = Math.floor(Math.random() * totalKeys);
+            keysData        = [];
+
+            for (let i = 0; i < totalKeys; i++) {
+                const keyEl = document.createElement('div');
+                keyEl.classList.add('key', 'disabled');
+                keyEl.textContent = '🔑';
+                keyEl.dataset.id  = i;
+                keyEl.onclick     = () => selectKey(keyEl);
+                grid.appendChild(keyEl);
+                keysData.push({ element: keyEl, currentSlot: i, colorIndex: i });
+            }
+
+            disableKeyTransitions();
+            positionKeysSmoothly();
+
+            diffMenu.style.pointerEvents    = 'auto';
+            diffMenu.style.opacity          = '1';
+            storeBlock.style.opacity        = '1';
+            storeBlock.style.pointerEvents  = 'auto';
+            achieveBlock.style.opacity      = '1';
+            achieveBlock.style.pointerEvents = 'auto';
+
+            if (menuMusic.paused) {
+                menuMusic.currentTime = 0;
+                menuMusic.play().catch(() => {});
+            }
+
+            if (audio.src) {
+                statusText.textContent = "Look closely! Track the glowing key.";
+                actionBtn.textContent  = "Play Sequence";
+                actionBtn.setAttribute('onclick', 'startFlowSequence()');
+                actionBtn.style.display = 'block';
+            }
+            resultDisplay.textContent = '';
+            resultDisplay.className   = '';
+        }
+
+        function positionKeysSmoothly() {
+            keysData.forEach(keyObj => {
+                const pos = slotPositions[keyObj.currentSlot];
+                keyObj.element.style.left = `${pos.left}px`;
+                keyObj.element.style.top  = `${pos.top}px`;
+            });
+        }
+
+        function animateShuffleStep() {
+            let slots = keysData.map(k => k.currentSlot);
+            for (let i = slots.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [slots[i], slots[j]] = [slots[j], slots[i]];
+            }
+            keysData.forEach((keyObj, index) => { keyObj.currentSlot = slots[index]; });
+            positionKeysSmoothly();
+        }
+
+        function startFlowSequence() {
+            if (!audio.src) return;
+            actionBtn.style.display = 'none';
+
+            diffMenu.style.pointerEvents    = 'none';
+            diffMenu.style.opacity          = '0.4';
+            storeBlock.style.opacity        = '0.3';
+            storeBlock.style.pointerEvents  = 'none';
+            achieveBlock.style.opacity      = '0.3';
+            achieveBlock.style.pointerEvents = 'none';
+
+            menuMusic.pause();
+            audio.currentTime = 0;
+            audio.play().catch(() => {});
+
+            statusText.textContent = "TRACK THE GLOWING KEY!";
+            keysData[winningKeyId].element.classList.add('target-focus');
+
+            let t1 = setTimeout(() => {
+                statusText.textContent = "FOCUS... SHUFFLING!";
+                keysData[winningKeyId].element.classList.remove('target-focus');
+                enableKeyTransitions();
+                shuffleInterval = setInterval(animateShuffleStep, currentShuffleSpeed);
+            }, 4600);
+            timelineTimeouts.push(t1);
+
+            let t2 = setTimeout(() => {
+                clearInterval(shuffleInterval);
+                disableKeyTransitions();
+                statusText.textContent = "10 SECONDS TO CHOOSE YOUR KEY!";
+                keysData.forEach(keyObj => {
+                    keyObj.element.classList.add(`c-${keyObj.colorIndex}`);
+                    keyObj.element.classList.remove('disabled');
+                });
+            }, 14000);
+            timelineTimeouts.push(t2);
+
+            let t3 = setTimeout(() => {
+                if (resultDisplay.textContent === '') {
+                    statusText.textContent = "TIME OUT!";
+                    selectKey(null);
+                }
+            }, 24000);
+            timelineTimeouts.push(t3);
+        }
+
+        function selectKey(element) {
+            audio.pause();
+            keysData.forEach(k => k.element.classList.add('disabled'));
+            disableKeyTransitions();
+            keysData.forEach(keyObj => {
+                for (let c = 0; c < totalKeys; c++) keyObj.element.classList.remove(`c-${c}`);
+            });
+
+            if (element) {
+                const chosenId = parseInt(element.dataset.id);
+                if (chosenId === winningKeyId) {
+                    playerStars += currentStarReward;
+                    winCounters[currentDifficultyKey] = (winCounters[currentDifficultyKey] || 0) + 1;
+                    saveGameToDevice();
+                    updateUIState();
+
+                    resultDisplay.innerHTML = `You Win!!<br><span style="font-size:1.5rem; color:#ffcc00;">+⭐ ${currentStarReward} Earned</span>`;
+                    resultDisplay.className  = 'win';
+                    element.style.backgroundColor  = '#00ff00';
+                    element.style.borderTopColor   = '#aaffaa';
+                    element.style.boxShadow        = '0 5px 0 #000, 0 0 20px #00ff00';
+                } else {
+                    resultDisplay.textContent = "Loser DUMB";
+                    resultDisplay.className   = 'lose';
+                    element.style.backgroundColor = '#333';
+                    element.style.borderTopColor  = '#555';
+
+                    const correctObj = keysData.find(k => parseInt(k.element.dataset.id) === winningKeyId);
+                    correctObj.element.style.backgroundColor = '#00ff00';
+                    correctObj.element.style.borderTopColor  = '#aaffaa';
+                    correctObj.element.style.boxShadow       = '0 5px 0 #000, 0 0 20px #00ff00';
+                }
+            } else {
+                resultDisplay.textContent = "Too Slow!";
+                resultDisplay.className   = 'lose';
+                const correctObj = keysData.find(k => parseInt(k.element.dataset.id) === winningKeyId);
+                correctObj.element.style.backgroundColor = '#00ff00';
+                correctObj.element.style.borderTopColor  = '#aaffaa';
+                correctObj.element.style.boxShadow       = '0 5px 0 #000, 0 0 20px #00ff00';
+            }
+
+            actionBtn.textContent = "Play Again";
+            actionBtn.setAttribute('onclick', 'setupGame()');
+            actionBtn.style.display = 'block';
+        }
+
+        /* ============================================================
+           INIT — Loading screen → auth check
+        ============================================================ */
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const loader = document.getElementById('loadingScreen');
+                if (loader) {
+                    loader.style.opacity   = '0';
+                    loader.style.transform = 'scale(1.05)';
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                        checkAuthAndStart();
+                    }, 600);
+                }
+            }, 3000);
+        });
+
+        // Allow Enter key on login/signup fields
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter') return;
+            const authVisible = document.getElementById('authScreen').style.display === 'flex';
+            if (!authVisible) return;
+            const loginVisible = document.getElementById('loginForm').style.display !== 'none';
+            if (loginVisible) attemptLogin();
+            else attemptSignup();
+        });
+    </script>
+</body>
+</html>
